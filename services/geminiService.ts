@@ -5,7 +5,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import type { AnalysisResult, AnalyticsSummary, User, WordTimestamp } from '../types';
 
 export async function analyzeTranscript(transcript: string, campaign: string): Promise<AnalysisResult> {
-  const apiKey = process.env.API_KEY;
+  const apiKey = import.meta.env.VITE_API_KEY;
   if (!apiKey) {
     throw new Error("API_KEY environment variable not set.");
   }
