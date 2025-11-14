@@ -1,0 +1,5 @@
+{
+  "name": "AdvantageCall Interact v6.0",
+  "description": "An intelligent platform to upload and analyze call center transcripts. It provides insights into call summary, customer sentiment, agent performance, resolution status, and overall opportunities for improvement using Gemini 2.5 Pro.",
+  "requestFramePermissions": []
+}
