@@ -1,74 +1,47 @@
-import React, { useState, useCallback } from 'react';
-import { UploadIcon } from './icons/UploadIcon';
+import React, { useState } from 'react';
+import { FileUpload } from '../components/FileUpload';
+import { analyzeTranscript } from '../services/geminiService';
 
-interface FileUploadProps {
-  onFileUpload: (files: FileList) => void;
-  disabled: boolean;
-}
+export const TranscriptAnalyzer: React.FC = () => {
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-export const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload, disabled }) => {
-  const [isDragging, setIsDragging] = useState(false);
+  const handleFileUpload = async (files: FileList) => {
+    const file = files[0];
+    if (!file) return;
 
-  const handleDragEnter = useCallback((e: React.DragEvent<HTMLLabelElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!disabled) setIsDragging(true);
-  }, [disabled]);
+    try {
+      setIsLoading(true);
+      setError(null);
 
-  const handleDragLeave = useCallback((e: React.DragEvent<HTMLLabelElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  }, []);
+      const content = await file.text();
 
-  const handleDragOver = useCallback((e: React.DragEvent<HTMLLabelElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-  }, []);
+      // Call Gemini AI backend
+      const result = await analyzeTranscript(content, 'your_campaign'); 
+      setAnalysisResult(result);
 
-  const handleDrop = useCallback((e: React.DragEvent<HTMLLabelElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    if (!disabled && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      onFileUpload(e.dataTransfer.files);
-    }
-  }, [disabled, onFileUpload]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      onFileUpload(e.target.files);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(`Analysis failed: ${message}`);
+    } finally {
+      setIsLoading(false);
     }
   };
-  
-  const borderColor = isDragging ? 'border-sky-500' : 'border-slate-300 dark:border-slate-600';
-  const bgColor = isDragging ? 'bg-slate-200/50 dark:bg-slate-700/50' : 'bg-slate-100 dark:bg-slate-800';
-  const cursor = disabled ? 'cursor-not-allowed' : 'cursor-pointer';
 
   return (
-    <label
-      onDragEnter={handleDragEnter}
-      onDragLeave={handleDragLeave}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-      className={`flex flex-col items-center justify-center w-full h-40 border-2 ${borderColor} border-dashed rounded-lg ${cursor} ${bgColor} transition-colors duration-300 ease-in-out ${disabled ? 'opacity-50' : ''}`}
-    >
-      <div className="flex flex-col items-center justify-center text-center">
-        <UploadIcon className="w-8 h-8 mb-3 text-slate-400 dark:text-slate-400" />
-        <p className="mb-2 font-semibold text-slate-700 dark:text-slate-300">
-          <span className="text-sky-500 dark:text-sky-400">Click to upload</span> or drag and drop
-        </p>
-        <p className="text-sm text-slate-500 dark:text-slate-500">TXT transcripts & optional WAV, MP3, M4A audio</p>
-      </div>
-      <input 
-        id="dropzone-file" 
-        type="file" 
-        className="hidden" 
-        multiple 
-        onChange={handleChange} 
-        disabled={disabled}
-        accept=".txt,.md,text/plain,.wav,.mp3,.m4a,audio/*"
-      />
-    </label>
+    <div className="p-8">
+      <h2 className="text-2xl font-bold mb-4">Transcript Analyzer</h2>
+
+      <FileUpload onFileUpload={handleFileUpload} disabled={isLoading} />
+
+      {isLoading && <p className="mt-4 text-blue-600">Analyzing transcript...</p>}
+      {error && <p className="mt-4 text-red-600">{error}</p>}
+      {analysisResult && (
+        <pre className="mt-4 bg-slate-100 dark:bg-slate-800 p-4 rounded">
+          {JSON.stringify(analysisResult, null, 2)}
+        </pre>
+      )}
+    </div>
   );
 };
