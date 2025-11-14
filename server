@@ -1,1 +1,44 @@
-Add file → Create new folder → “server”
+// server/geminiService.ts
+import { GoogleGenAI, Type } from "@google/genai";
+import type { AnalysisResult, AnalyticsSummary, User, WordTimestamp } from "../src/types";
+
+export async function analyzeTranscript(transcript: string, campaign: string): Promise<AnalysisResult> {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("API_KEY environment variable not set.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
+
+  let prompt: string;
+  let schema: any;
+
+  if (campaign === "banking") {
+    schema = {
+      type: Type.STRING,
+    };
+    prompt = `
+      Analyze this banking call transcript and provide insights:
+      ${transcript}
+    `;
+  } else {
+    schema = {
+      type: Type.STRING,
+    };
+    prompt = `
+      Analyze this call transcript:
+      ${transcript}
+    `;
+  }
+
+  const response = await ai.responses.generateText({
+    model: "models/gemini-1.5-pro",
+    prompt,
+  });
+
+  return {
+    summary: response.text,
+    analytics: [],
+    sentiments: [],
+  };
+}
